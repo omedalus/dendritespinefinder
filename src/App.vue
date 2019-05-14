@@ -16,23 +16,30 @@
     </v-toolbar>
 
     <v-content>
-      <HelloWorld/>
+      <v-container>
+        <v-layout column>
+          <FileSelector/>
+          <ImageProcessor/>
+        </v-layout>
+      </v-container>
     </v-content>
   </v-app>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld'
+import ImageProcessor from './components/ImageProcessor';
+import FileSelector from './components/FileSelector';
 
 export default {
   name: 'App',
   components: {
-    HelloWorld
+    FileSelector,
+    ImageProcessor
   },
-  data () {
+  data() {
     return {
       //
-    }
+    };
   }
-}
+};
 </script>
