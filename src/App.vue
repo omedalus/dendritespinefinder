@@ -40,6 +40,9 @@ export default {
     return {
       //
     };
+  },
+  created() {
+    this.$store.dispatch('loadFileTree');
   }
 };
 </script>

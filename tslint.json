@@ -15,7 +15,11 @@
     "ordered-imports": false,
     "object-literal-sort-keys": false,
     "no-consecutive-blank-lines": false,
-    "semicolon": "always",
-    "trailing-comma": "never"
+    "no-var-requires": false,
+    "semicolon": [true, "always"],
+    "trailing-comma": [true, {
+      "multiline": "never",
+      "singleline": "never"
+    }]
   }
 }
