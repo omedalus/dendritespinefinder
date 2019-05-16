@@ -1,27 +1,64 @@
 <template>
-  <v-layout column>
-    {{folders}}
+  <v-layout column fill-height>
+    <v-select
+      v-model="currentFolder"
+      :items="folders"
+      label="Folder"
+      prepend-icon="folder"
+    ></v-select>
 
-    {{currentFolder}}
+    <v-flex fill-height class="file-selector-scroller">      
+      <v-list>
+        <v-list-tile v-for="file in files" :key="file" @click="currentFile = file"
+            :class="currentFile == file ? 'current' : ''">
+          <v-list-tile-content>
+            {{file}}
+          </v-list-tile-content>
+        </v-list-tile>
+      </v-list>
+    </v-flex>
 
-    {{files}}
   </v-layout>
 </template>
 
-<style>
-
+<style scoped>
+.file-selector-scroller {
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+}
+.v-list {
+  position: absolute;
+  width: calc(100% - .5ex);
+  top: 0;
+  left: 0;
+}
+.v-list .current {
+  background-color: rgba(128,200,255, .6);
+}
 </style>
 
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
-import AWS from 'aws-sdk';
+import { Vue, Component, Prop, Watch } from 'vue-property-decorator';
 
 @Component
 export default class FileSelector extends Vue {
-  @Prop() private msg!: string;
+  get currentFolder() {
+    return this.$store.state.currentFile.foldername;
+  }
+  
+  get currentFile() {
+    return this.$store.state.currentFile.filename;
+  }
 
-  private currentFolder = null as string|null;
+  set currentFile(filename) {
+    this.$store.commit('setCurrentFile', {filename});
+  }
+
+  set currentFolder(foldername) {
+    this.$store.commit('setCurrentFile', {foldername});
+  }
 
   get folders() {
     return this.$store.getters.folders;
@@ -34,10 +71,10 @@ export default class FileSelector extends Vue {
     return this.$store.getters.files(this.currentFolder);
   }
 
-  created() {
-    if (this.$store.getters.folders.length > 0) {
-      this.currentFolder = this.$store.getters.folders[0];
-    }
+
+  @Watch('currentFile')
+  onCurrentFileUpdated() {
+    this.$store.dispatch('loadCurrentFile');
   }
 }
 </script>

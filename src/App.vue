@@ -2,29 +2,37 @@
   <v-app>
     <v-toolbar app>
       <v-toolbar-title class="headline text-uppercase">
-        <span>Vuetify</span>
-        <span class="font-weight-light">MATERIAL DESIGN</span>
+        <span>Dendrite</span>
+        <span class="font-weight-light">SPINE FINDER</span>
       </v-toolbar-title>
       <v-spacer></v-spacer>
-      <v-btn
-        flat
-        href="https://github.com/vuetifyjs/vuetify/releases/latest"
-        target="_blank"
-      >
-        <span class="mr-2">Latest Release</span>
-      </v-btn>
+      <span class="mr-2">{{todaynow}}</span>
     </v-toolbar>
 
     <v-content>
-      <v-container>
-        <v-layout column>
-          <FileSelector/>
-          <ImageProcessor/>
+      <v-container fuild class="app-container" grid-list-lg fill-height>
+        <v-layout row wrap fill-height>
+
+          <v-flex xs2>
+            <FileSelector/>
+          </v-flex>
+
+          <v-flex xs10>
+            <ImageProcessor/>
+          </v-flex>
+
         </v-layout>
       </v-container>
     </v-content>
   </v-app>
 </template>
+
+<style>
+#app {
+  min-height: 100vh;
+}
+
+</style>
 
 <script>
 import ImageProcessor from './components/ImageProcessor';
@@ -38,10 +46,22 @@ export default {
   },
   data() {
     return {
-      //
+      lastHeartbeat: new Date()
     };
   },
+  computed: {
+    todaynow() {
+      return this.lastHeartbeat.toDateString() + ' ' + this.lastHeartbeat.toLocaleTimeString();
+    }
+  },
+
   created() {
+    const fnHeartbeat = () => {
+      this.lastHeartbeat = new Date();
+      setTimeout(fnHeartbeat, 1000);
+    };
+    fnHeartbeat();
+
     this.$store.dispatch('loadFileTree');
   }
 };
