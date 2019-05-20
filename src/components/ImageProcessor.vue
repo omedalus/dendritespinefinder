@@ -55,8 +55,12 @@ export default class ImageProcessor extends Vue {
     const imgdataArray = this.$store.state.currentFile.data.Body as Uint8Array;
     const imgdataBinaryStr = imgdataArray.reduce( (retval: string, ch: number): string => retval + String.fromCharCode(ch), '');
     const imgdataB64 = btoa(imgdataBinaryStr);
-    const retval = `data:${mime};base64, ${imgdataB64}`;
-    return retval;
+
+    const img = new Image();
+    img.src = `data:${mime};base64, ${imgdataB64}`;
+
+    console.log(img.naturalWidth, img.naturalHeight);
+    return '';
   }
 
   get isDataLoading() : boolean {
