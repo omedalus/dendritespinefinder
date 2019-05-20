@@ -1,10 +1,13 @@
 <template>
   <v-flex full-height style="height:100%">
-    <v-layout v-if="isDataLoading">
+    <v-layout column v-if="isDataLoading">
+      <h2>{{statusMsg}}</h2>
       <v-progress-linear :indeterminate="true"></v-progress-linear>
     </v-layout>
 
-    <v-layout column v-else full-height class="processing-console">
+    <v-layout column full-height 
+        class="processing-console"
+        :style="'display:' + (isDataLoading ? 'none' : 'unset')">
       <v-toolbar flat>
         <v-btn>
           Analyze
@@ -12,8 +15,7 @@
       </v-toolbar>
 
 
-      <v-flex full-height class="image-holder">
-        <img :src="imgsrc" />
+      <v-flex full-height ref="imageHolder" class="image-holder">
       </v-flex>
     </v-layout>
 
@@ -46,30 +48,23 @@ import { Vue, Component, Prop, Watch } from 'vue-property-decorator';
 
 @Component
 export default class ImageProcessor extends Vue {
-  get imgsrc() : string {
-    if (this.isDataLoading || !this.$store.state.currentFile.data) {
-      return '';
-    }
-
-    const mime = this.$store.state.currentFile.data.ContentType as string;
-    const imgdataArray = this.$store.state.currentFile.data.Body as Uint8Array;
-    const imgdataBinaryStr = imgdataArray.reduce( (retval: string, ch: number): string => retval + String.fromCharCode(ch), '');
-    const imgdataB64 = btoa(imgdataBinaryStr);
-
-    const img = new Image();
-    img.src = `data:${mime};base64, ${imgdataB64}`;
-
-    console.log(img.naturalWidth, img.naturalHeight);
-    return '';
+  get statusMsg() : string {
+    return this.$store.state.statusMsg;
   }
 
   get isDataLoading() : boolean {
-    const data = this.$store.state.currentFile.data;
-    return (
-      data &&
-      (typeof data === 'object') &&
-      (Object.keys(data).length === 0)
-    );
+    return this.$store.state.loadingState === 'LOADING';
+  }
+
+  get image() : object|null {
+    return this.$store.state.image.displayable;
+  }
+
+  @Watch('image')
+  onDisplayableImageChanged() {
+    const elemImageHolder = this.$refs.imageHolder as Element;
+    elemImageHolder.innerHTML = '';
+    elemImageHolder.appendChild(this.image as Element);
   }
 }
 </script>

@@ -1,6 +1,8 @@
 import Vue from 'vue';
 import Vuex from 'vuex';
 
+import downscale from 'downscale';
+
 Vue.use(Vuex);
 
 const s3 = new AWS.S3();
@@ -9,15 +11,76 @@ const s3params = {
 };
 
 
-export const store = new Vuex.Store({
-  state: {
-    filesByFolder: {} as {[key: string]: string[]},
-    currentFile: {
-      foldername: null as string|null,
-      filename: null as string|null,
-      data: null as string|null
-    }
+// Inline worker implementation taken from:
+// https://stackoverflow.com/questions/5408406/web-workers-without-a-separate-javascript-file
+// Build a worker from an anonymous function body.
+const parseImageDataWorkerFn = () => {
+  self.onmessage = (e) => {
+    const data = e.data;
+
+    const mime = data.ContentType as string;
+    const imgdataArray = data.Body as Uint8Array;
+    const imgdataBinaryStr = imgdataArray.reduce(
+      (retval: string, ch: number): string => retval + String.fromCharCode(ch), '');
+    const imgdataB64 = btoa(imgdataBinaryStr);
+
+    const imgsrc = `data:${mime};base64, ${imgdataB64}`;
+    // NOTE: Typescript is really confused here because self is the worker and not the window.
+    // We basically have to trick it.
+    self.postMessage(imgsrc);
+  };
+};
+const parseImageDataWorkerBlobURL = URL.createObjectURL(new Blob(
+  [`(${parseImageDataWorkerFn.toString()})()`],
+  {type: 'application/javascript'}
+));
+const parseImageDataWorker = new Worker(parseImageDataWorkerBlobURL);
+
+// Won't be needing this anymore
+URL.revokeObjectURL(parseImageDataWorkerBlobURL);
+
+parseImageDataWorker.addEventListener('message', (e) => {
+  const img = new Image();
+  img.onload = () => {
+    store.commit('setStatusMsg', 'Resizing image for displayability.');
+    store.commit('setImage', { which: 'full', image: img });
+
+    downscale(img, 800, 0).
+      then( (displayableImgURL: string) => {
+        const displayableImg = document.createElement('img');
+        displayableImg.src = displayableImgURL;
+
+        store.commit('setLoadingState', 'LOADED');
+        store.commit('setImage', { which: 'displayable', image: displayableImg });
+      });
+  };
+  img.src = e.data;
+});
+
+
+
+const makeDefaultState = () => ({
+  statusMsg: '',
+  errorMsg: '',
+  loadingState: null as string | null,
+
+  filesByFolder: {} as { [key: string]: string[] },
+  currentFile: {
+    foldername: null as string | null,
+    filename: null as string | null,
+    data: null as string | null
   },
+
+  image: {
+    full: null as object | null,
+    displayable: null as object | null,
+    thumbnail: null as object | null
+  }
+});
+
+
+export const store = new Vuex.Store({
+  state: makeDefaultState(),
 
   getters: {
     folders(state) {
@@ -37,13 +100,28 @@ export const store = new Vuex.Store({
 
   mutations: {
     clear(state) {
-      state.filesByFolder = {};
-      state.currentFile = {
-        foldername: null as string | null,
-        filename: null as string | null,
-        data: null as string | null
-      }
+      Object.assign(state, makeDefaultState());
     },
+
+    setStatusMsg(state, msg) {
+      state.statusMsg = msg;
+    },
+    setErrorMsg(state, msg) {
+      state.errorMsg = msg;
+    },
+    setLoadingState(state, loadingState) {
+      state.loadingState = loadingState;
+    },
+
+    setImage(state, {image, which}) {
+      Vue.set(state.image, which, image);
+    },
+    clearImages(state) {
+      Object.keys(state.image).forEach( (key: string) => {
+        state.image[key] = null;
+      });
+    }
+
 
     addFile(state, fileinfo) {
       const filename = fileinfo.filename.trim() as string;
@@ -116,12 +194,14 @@ export const store = new Vuex.Store({
   actions: {
     loadFileTree($store) {
       $store.commit('clear');
+      $store.commit('setStatusMsg', 'Loading file tree');
 
       s3.listObjects(s3params, (err: any, data: any) => {
         if (err) {
           throw err;
         }
 
+        $store.commit('setStatusMsg', 'Parsing file tree');
         data.Contents.forEach((item: any) => {
           const filenameparts = item.Key.split('/');
           const filename = filenameparts.pop();
@@ -131,22 +211,32 @@ export const store = new Vuex.Store({
         });
 
         $store.commit('setCurrentFile');
+        $store.commit('setStatusMsg', 'File tree ready');
       });
     },
 
-    loadCurrentFile({state, getters, commit}) {
-      commit('setCurrentFileData', {});
-      if (!state.currentFile.filename || !state.currentFile.foldername) {
+    loadCurrentFile($store) {
+      $store.commit('setCurrentFileData', {});
+      $store.commit('setStatusMsg', 'Loading image data');
+      $store.commit('setLoadingState', 'LOADING');
+
+      if (!$store.state.currentFile.filename || !$store.state.currentFile.foldername) {
+        $store.commit('setStatusMsg', 'No current image selected. Nothing to load.');
         return;
       }
       s3.getObject({
         ...s3params,
-        Key: `${state.currentFile.foldername}/${state.currentFile.filename}`
+        Key: `${$store.state.currentFile.foldername}/${$store.state.currentFile.filename}`
       }, (err: any, data: any) => {
         if (err) {
           throw err;
         }
-        commit('setCurrentFileData', data);
+        $store.commit('setStatusMsg', 'Storing file data.');
+        $store.commit('setCurrentFileData', data);
+
+        $store.commit('setStatusMsg', 'Parsing image data.');
+
+        parseImageDataWorker.postMessage(data);
       });
     }
   }
