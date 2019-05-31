@@ -25,15 +25,17 @@ def lambda_handler(event, context):
   s3bucket = 'dendritespinefinder'
   s3key = "userdata/{}/{}/captures/{}".format(username, foldername, imagefilename)
 
-  return error_return(200, s3key)
-
   try:
     response = s3.get_object(Bucket=s3bucket, Key=s3key)
   except:
     return error_return(400, "Image {} not found in folder {}.".format(imagefilename, foldername))
 
+  import numpy
+  a = numpy.array([[1, 2], [3, 4]])
+  response_body = str(numpy.mean(a))
+
   # TODO implement
   return {
       'statusCode': 200,
-      'body': json.dumps(list(response.keys()))
+      'body': str(response_body)
   }
