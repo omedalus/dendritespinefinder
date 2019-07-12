@@ -7,7 +7,7 @@
       prepend-icon="folder"
     ></v-select>
 
-    <v-flex fill-height class="file-selector-scroller">      
+    <v-flex fill-height class="file-selector-scroller">
       <v-list>
         <v-list-tile v-for="file in files" :key="file" @click="currentFile = file"
             :class="currentFile == file ? 'current' : ''">
@@ -47,7 +47,11 @@ export default class FileSelector extends Vue {
   get currentFolder() {
     return this.$store.state.currentFile.foldername;
   }
-  
+
+  set currentFolder(foldername) {
+    this.$store.commit('setCurrentFile', {foldername});
+  }
+
   get currentFile() {
     return this.$store.state.currentFile.filename;
   }
@@ -56,9 +60,6 @@ export default class FileSelector extends Vue {
     this.$store.commit('setCurrentFile', {filename});
   }
 
-  set currentFolder(foldername) {
-    this.$store.commit('setCurrentFile', {foldername});
-  }
 
   get folders() {
     return this.$store.getters.folders;
@@ -73,7 +74,7 @@ export default class FileSelector extends Vue {
 
 
   @Watch('currentFile')
-  onCurrentFileUpdated() {
+  private onCurrentFileUpdated() {
     this.$store.dispatch('loadCurrentFile');
   }
 }

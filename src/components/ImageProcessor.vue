@@ -5,7 +5,7 @@
       <v-progress-linear :indeterminate="true"></v-progress-linear>
     </v-layout>
 
-    <v-layout column full-height 
+    <v-layout column full-height
         class="processing-console"
         :style="'display:' + (isDataLoading ? 'none' : 'unset')">
       <v-toolbar flat>
@@ -29,7 +29,7 @@
 .image-holder {
   position: relative;
   width: 100%;
-  height: 100%; 
+  height: 100%;
 }
 .image-holder img {
   position: absolute;
@@ -48,20 +48,20 @@ import { Vue, Component, Prop, Watch } from 'vue-property-decorator';
 
 @Component
 export default class ImageProcessor extends Vue {
-  get statusMsg() : string {
+  get statusMsg(): string {
     return this.$store.state.statusMsg;
   }
 
-  get isDataLoading() : boolean {
+  get isDataLoading(): boolean {
     return this.$store.state.loadingState === 'LOADING';
   }
 
-  get image() : object|null {
+  get image(): object|null {
     return this.$store.state.image.displayable;
   }
 
   @Watch('image')
-  onDisplayableImageChanged() {
+  private onDisplayableImageChanged() {
     const elemImageHolder = this.$refs.imageHolder as Element;
     elemImageHolder.innerHTML = '';
     elemImageHolder.appendChild(this.image as Element);

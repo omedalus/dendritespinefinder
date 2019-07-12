@@ -1,7 +1,8 @@
 import Vue from 'vue';
 import Vuex from 'vuex';
 
-import downscale from 'downscale';
+import * as AWS from 'aws-sdk';
+// import downscale from 'downscale';
 
 Vue.use(Vuex);
 
@@ -27,7 +28,7 @@ const parseImageDataWorkerFn = () => {
     const imgsrc = `data:${mime};base64, ${imgdataB64}`;
     // NOTE: Typescript is really confused here because self is the worker and not the window.
     // We basically have to trick it.
-    self.postMessage(imgsrc);
+    // self.postMessage(imgsrc);
   };
 };
 const parseImageDataWorkerBlobURL = URL.createObjectURL(new Blob(
@@ -45,6 +46,7 @@ parseImageDataWorker.addEventListener('message', (e) => {
     store.commit('setStatusMsg', 'Resizing image for displayability.');
     store.commit('setImage', { which: 'full', image: img });
 
+    /*
     downscale(img, 800, 0).
       then( (displayableImgURL: string) => {
         const displayableImg = document.createElement('img');
@@ -53,6 +55,7 @@ parseImageDataWorker.addEventListener('message', (e) => {
         store.commit('setLoadingState', 'LOADED');
         store.commit('setImage', { which: 'displayable', image: displayableImg });
       });
+      */
   };
   img.src = e.data;
 });
@@ -118,9 +121,9 @@ export const store = new Vuex.Store({
     },
     clearImages(state) {
       Object.keys(state.image).forEach( (key: string) => {
-        state.image[key] = null;
+        // state.image[key] = null;
       });
-    }
+    },
 
 
     addFile(state, fileinfo) {
@@ -241,4 +244,3 @@ export const store = new Vuex.Store({
     }
   }
 });
-
