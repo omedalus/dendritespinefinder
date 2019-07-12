@@ -10,15 +10,15 @@
     </v-toolbar>
 
     <v-content>
-      <v-container fuild class="app-container" grid-list-lg fill-height>
-        <v-layout row wrap fill-height>
+      <v-container fluid class="app-container" grid-list-lg fill-height>
+        <v-layout row fill-height>
 
-          <v-flex xs2>
+          <v-flex class="side-file-nav">
             <FileSelector/>
           </v-flex>
 
-          <v-flex xs10>
-            <ImageProcessor/>
+          <v-flex class="main-image-processor">
+            <!-- <ImageProcessor/> -->
           </v-flex>
 
         </v-layout>
@@ -27,11 +27,19 @@
   </v-app>
 </template>
 
-<style>
+<style scoped>
 #app {
-  min-height: 100vh;
+  min-height: calc(100vh - 8em);
 }
 
+.side-file-nav {
+  min-width: 15em;
+  flex: 1;
+}
+
+.main-image-processor {
+  flex: 5;
+}
 </style>
 
 <script>
